@@ -4,7 +4,7 @@ const cloudinary = require("cloudinary").v2;
 exports.newProduct = async (req, res) => {
   try {
    
-    if ('images' in req.body) {
+    if ('images' in req.body ||req.files.images) {
       const imagesValue = req.body.images;
       if (/^https?:\/\/\S+\.\S+$/.test(imagesValue)) {
         req.body.images = imagesValue;
