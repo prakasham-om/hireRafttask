@@ -2,10 +2,12 @@ const Product = require('../models/productModel');
 const cloudinary = require("cloudinary").v2;
 
 exports.newProduct = async (req, res) => {
+ console.log(req.body.images)
   try {
    
-    if ('images' in req.body ||req.files.images) {
+    if ('images' in req.body || req.files.images) {
       const imagesValue = req.body.images;
+      console.log(imagesValue)
       if (/^https?:\/\/\S+\.\S+$/.test(imagesValue)) {
         req.body.images = imagesValue;
       } else if (req.files && req.files.images) {
@@ -14,6 +16,7 @@ exports.newProduct = async (req, res) => {
           return res.status(400).json({ success: false, error: 'Invalid file provided.' });
         }
         const result = await cloudinary.uploader.upload(file.tempFilePath);
+        console.log(result.url);
         req.body.images = result.url;
       } else {
         req.body.images = imagesValue;
@@ -34,7 +37,7 @@ exports.newProduct = async (req, res) => {
     });
   }
 };
-exports.getAllProducts = async (req, res, next) => {
+exports.getAllProducts = async (req, res) => {
   console.log(req.query);
   try {
     const resPerPage = parseInt(req.query.perPage, 10) || 8;
@@ -42,7 +45,7 @@ exports.getAllProducts = async (req, res, next) => {
     const productName = req.query.productName ? req.query.productName.replace(/"/g, '') : '';
     const category = req.query.category ? req.query.category.replace(/"/g, '') : '';
     const filters = {};
-    console.log(productName);
+    //console.log(productName);
 
     if (productName) {
       filters.productName = new RegExp(productName, 'i');
@@ -55,7 +58,7 @@ exports.getAllProducts = async (req, res, next) => {
     const products = await Product.find(filters)
       .skip((page - 1) * resPerPage)
       .limit(resPerPage);
-
+  
     const countProducts = await Product.countDocuments(filters);
 
     res.status(200).json({
@@ -67,13 +70,13 @@ exports.getAllProducts = async (req, res, next) => {
       products,
     });
   } catch (error) {
-    next(error);
+    res.status(500).json({message:"internal error",error});
   }
 };
 
 
 
-exports.getSingleProduct = async (req, res, next) => {
+exports.getSingleProduct = async (req, res) => {
   try {
     const productId = req.params.id;
     const product = await Product.findById(productId);
@@ -97,12 +100,12 @@ exports.getSingleProduct = async (req, res, next) => {
     });
   }
 };
-exports.updateProduct = async (request, response, next) => {
+exports.updateProduct = async (request, response) => {
   try {
     let product = await Product.findById(request.params.id);
 
     if (!product) {
-      return next(new ErrorHandler("Product not Found !", 404));
+      return res.status(401).json({message:"Product not Found !"});
     }
 
     const file = request.files.images;
@@ -135,7 +138,7 @@ exports.updateProduct = async (request, response, next) => {
   }
 };
 
-exports.deleteProduct = async (req, res, next) => {
+exports.deleteProduct = async (req, res) => {
   try {
     const productId = req.params.id;
     const product = await Product.findById(productId);
